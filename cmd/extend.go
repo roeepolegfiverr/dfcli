@@ -26,7 +26,7 @@ func extendPreRunE(cmd *cobra.Command, args []string) (err error) {
 	if len(args) != 2 {
 		return errors.New("Wrong number of arguments (expected 2).")
 	}
-
+	// TODO: Validate - can only extend my server (server taken by me)
 	postData.ServerName = args[0]
 	hours, _ := strconv.Atoi(args[1])
 	postData.ReleaseDate = time.Now().Add(time.Hour * time.Duration(hours)).Format(time.RFC3339)
@@ -41,6 +41,5 @@ func extend(cmd *cobra.Command, args []string) {
 		log.Fatal("%s%s%s\n", RED, err.Error(), NORMAL)
 		return
 	}
-	fmt.Println(srv)
 	fmt.Printf("%s - %s was extended until %s\n", srv.Environment, srv.Name, srv.ReleaseDate)
 }

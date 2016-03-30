@@ -5,6 +5,7 @@ import (
 	"dfcli/auth"
 	"fmt"
 	"github.com/spf13/cobra"
+	"log"
 	"os"
 	"strings"
 )
@@ -41,7 +42,11 @@ func initRun(cmd *cobra.Command, args []string) {
 	userName, _ := reader.ReadString('\n')
 	userName = strings.Replace(userName, "\n", "", -1)
 
-	auth.SaveAuth(ldapName, ldapPass, userName, email, imageUrl)
-	fmt.Println(ldapName, ldapPass, userName, email, imageUrl)
-	fmt.Println("Authentication is done, Time to get busy!")
+	err := auth.SaveAuth(ldapName, ldapPass, userName, email, imageUrl)
+	if err != nil {
+		log.Fatal("%sERROR - SaveAuth - %s%s\n", RED, err.Error(), NORMAL)
+		return
+	}
+
+	fmt.Println("Done!")
 }

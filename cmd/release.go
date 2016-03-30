@@ -25,7 +25,7 @@ func releasePreRunE(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return errors.New("Wrong number of arguments (expected 1).")
 	}
-
+	// TODO: Validate - can only release my server (server taken by me)
 	postData.ServerName = args[0]
 	return nil
 }

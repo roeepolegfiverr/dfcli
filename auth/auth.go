@@ -27,28 +27,30 @@ func (u *User) Blank() bool {
 	return u.Email == "" && u.Image == "" && u.Email == ""
 }
 
-func SaveAuth(ldapName, ldapPass, username, email, imageUrl string) {
+func SaveAuth(ldapName, ldapPass, username, email, imageUrl string) (err error) {
 	csv := fmt.Sprintf("%s,%s,%s,%s", ldapName, username, email, imageUrl)
 
 	file, err := os.Create(USER_CSV_FILE)
 	if err != nil {
 		fmt.Printf("%sERROR - SaveAuth - %s%s\n", RED, err.Error(), NORMAL)
-		return
+		return err
 	}
 	defer file.Close()
 
 	_, err = file.WriteString(csv)
 	if err != nil {
 		fmt.Printf("%sERROR - SaveAuth - %s%s\n", RED, err.Error(), NORMAL)
-		return
+		return err
 	}
 	file.Sync()
 
 	err = saveToKeychain(ldapName, ldapPass)
 	if err != nil {
 		fmt.Printf("%sERROR - SaveAuth - %s%s\n", RED, err.Error(), NORMAL)
-		return
+		return err
 	}
+
+	return nil
 }
 
 func ReadAuth() (user User, err error) {
@@ -71,7 +73,7 @@ func ReadAuth() (user User, err error) {
 		return user, err
 	}
 
-	user = User{Email: splited[1], Name: splited[2], Image: splited[3], AuthToken: token}
+	user = User{Name: splited[1], Email: splited[2], Image: splited[3], AuthToken: token}
 
 	return user, err
 }

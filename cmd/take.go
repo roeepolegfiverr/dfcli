@@ -27,6 +27,7 @@ func takePreRunE(cmd *cobra.Command, args []string) error {
 		return errors.New("Wrong number of arguments (expected 1).")
 	}
 
+	// TODO: Validate - can't take more than one server
 	postData.ServerName = args[0]
 	postData.ReleaseDate = time.Now().Add(time.Hour).Format(time.RFC3339)
 	return nil

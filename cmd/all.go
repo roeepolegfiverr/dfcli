@@ -43,7 +43,7 @@ func all(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Printf("-- %s -------\n", envRes.Name)
-	fmt.Println("Server\t\tUser\tRelease Date")
+	fmt.Println("Server\t\tUser\tReleased At")
 	for _, srv := range envRes.Servers {
 		clr := NORMAL
 		if srv.User == (auth.User{}) {
