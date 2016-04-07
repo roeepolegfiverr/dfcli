@@ -32,21 +32,21 @@ func SaveAuth(ldapName, ldapPass, username, email, imageUrl string) (err error) 
 
 	file, err := os.Create(USER_CSV_FILE)
 	if err != nil {
-		fmt.Printf("%sERROR - SaveAuth - %s%s\n", RED, err.Error(), NORMAL)
+		fmt.Printf("%sERROR1 - SaveAuth - %s%s\n", RED, err.Error(), NORMAL)
 		return err
 	}
 	defer file.Close()
 
 	_, err = file.WriteString(csv)
 	if err != nil {
-		fmt.Printf("%sERROR - SaveAuth - %s%s\n", RED, err.Error(), NORMAL)
+		fmt.Printf("%sERROR2 - SaveAuth - %s%s\n", RED, err.Error(), NORMAL)
 		return err
 	}
 	file.Sync()
 
 	err = saveToKeychain(ldapName, ldapPass)
 	if err != nil {
-		fmt.Printf("%sERROR - SaveAuth - %s%s\n", RED, err.Error(), NORMAL)
+		fmt.Printf("%sERROR3 - SaveAuth - %s%s\n", RED, err.Error(), NORMAL)
 		return err
 	}
 
@@ -81,10 +81,11 @@ func ReadAuth() (user User, err error) {
 func saveToKeychain(ldapName, ldapPass string) error {
 	str := fmt.Sprintf("%s:%s", ldapName, ldapPass)
 	b64String := b64.StdEncoding.EncodeToString([]byte(str))
-
+	keychain.Remove(SERVICE_KEY, ldapName)
 	return keychain.Add(SERVICE_KEY, ldapName, b64String)
 }
 
 func readKeychain(ldapName string) (key string, err error) {
-	return keychain.Find(SERVICE_KEY, ldapName)
+	key, err = keychain.Find(SERVICE_KEY, ldapName)
+	return key, err
 }

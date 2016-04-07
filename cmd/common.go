@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"crypto/tls"
 	"dfcli/auth"
 	"encoding/json"
 	"errors"
@@ -52,13 +53,15 @@ var postData PostData
 
 func Post(cmdName, authToken string, payloadStr []byte) (srv Server, err error) {
 
-	url := "http://" + os.Getenv("DFCLI_END_POINT") + "/server/rest/" + cmdName
+	url := "https://" + os.Getenv("DFCLI_END_POINT") + "/server/rest/" + cmdName
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadStr))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", authToken))
+	req.Header.Set("Authorization", "Basic "+authToken)
 
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
 	rawResponse, err := client.Do(req)
 	if err != nil {
 		return srv, err
@@ -83,13 +86,15 @@ func Post(cmdName, authToken string, payloadStr []byte) (srv Server, err error) 
 }
 
 func Get(cmdName, authToken string) (res EnvResponse, err error) {
-	url := "http://" + os.Getenv("DFCLI_END_POINT") + "/server/rest/" + cmdName + "?" + fmt.Sprintf("environment=%s", PLIKE)
+	url := "https://" + os.Getenv("DFCLI_END_POINT") + "/server/rest/" + cmdName + "?" + fmt.Sprintf("environment=%s", PLIKE)
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", authToken))
+	req.Header.Set("Authorization", "Basic "+authToken)
 
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
 	rawResponse, err := client.Do(req)
 	if err != nil {
 		return res, err
