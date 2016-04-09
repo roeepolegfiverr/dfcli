@@ -11,13 +11,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 )
 
 const (
-	RED    = "\x1b[31;1m"
-	NORMAL = "\x1b[0m"
-	GREEN  = "\x1b[32;1m"
-	PLIKE  = "Plike"
+	RED                 = "\x1b[31;1m"
+	NORMAL              = "\x1b[0m"
+	GREEN               = "\x1b[32;1m"
+	PLIKE               = "Plike"
+	REQUEST_TIMEOUT_SEC = 5
 )
 
 // Data Types
@@ -54,25 +56,8 @@ var postData PostData
 func Post(cmdName, authToken string, payloadStr []byte) (srv Server, err error) {
 
 	url := "https://" + os.Getenv("DFCLI_END_POINT") + "/server/rest/" + cmdName
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadStr))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Basic "+authToken)
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
-	rawResponse, err := client.Do(req)
-	if err != nil {
-		return srv, err
-	}
-	defer rawResponse.Body.Close()
-
-	if rawResponse.StatusCode != 200 && rawResponse.StatusCode != 201 {
-		return srv, errors.New(rawResponse.Status)
-	}
-
-	body, err := ioutil.ReadAll(rawResponse.Body)
+	body, err := doRequest("POST", url, authToken, payloadStr)
 	if err != nil {
 		return srv, err
 	}
@@ -81,31 +66,14 @@ func Post(cmdName, authToken string, payloadStr []byte) (srv Server, err error) 
 	if err != nil {
 		return srv, err
 	}
-	// fmt.Println(srv)
+
 	return srv, nil
 }
 
 func Get(cmdName, authToken string) (res EnvResponse, err error) {
 	url := "https://" + os.Getenv("DFCLI_END_POINT") + "/server/rest/" + cmdName + "?" + fmt.Sprintf("environment=%s", PLIKE)
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Basic "+authToken)
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
-	rawResponse, err := client.Do(req)
-	if err != nil {
-		return res, err
-	}
-	defer rawResponse.Body.Close()
-
-	if rawResponse.StatusCode != 200 {
-		return res, errors.New(rawResponse.Status)
-	}
-
-	body, err := ioutil.ReadAll(rawResponse.Body)
+	body, err := doRequest("GET", url, authToken, nil)
 	if err != nil {
 		return res, err
 	}
@@ -116,6 +84,34 @@ func Get(cmdName, authToken string) (res EnvResponse, err error) {
 	}
 
 	return res, nil
+}
+
+func doRequest(httpMethod, url, authToken string, payloadStr []byte) (res []byte, err error) {
+	req, err := http.NewRequest(httpMethod, url, bytes.NewBuffer(payloadStr))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Basic "+authToken)
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   time.Duration(REQUEST_TIMEOUT_SEC * time.Second),
+	}
+
+	rawResponse, err := client.Do(req)
+	if err != nil {
+		return res, err
+	}
+	defer rawResponse.Body.Close()
+
+	if rawResponse.StatusCode != 200 {
+		return res, errors.New(rawResponse.Status)
+	}
+
+	res, err = ioutil.ReadAll(rawResponse.Body)
+	return res, err
 }
 
 func persistentPreRunE(cmd *cobra.Command, args []string) (err error) {
