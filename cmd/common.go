@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -52,6 +53,8 @@ func (p *PostData) toBytesArray() []byte {
 }
 
 var postData PostData
+var retriesCount = 0
+var retry = true
 
 func Post(cmdName, authToken string, payloadStr []byte) (srv Server, err error) {
 
@@ -100,11 +103,28 @@ func doRequest(httpMethod, url, authToken string, payloadStr []byte) (res []byte
 		Timeout:   time.Duration(REQUEST_TIMEOUT_SEC * time.Second),
 	}
 
-	rawResponse, err := client.Do(req)
-	if err != nil {
-		return res, err
+	rawResponse := &http.Response{}
+	for retriesCount < MaxRetries && retry {
+
+		rawResponse, err = client.Do(req)
+
+		if err, ok := err.(net.Error); ok && err.Timeout() {
+			fmt.Println("Timeout, retrying...", retriesCount)
+			retriesCount++
+
+		} else if err != nil {
+			return res, err
+
+		} else if err == nil {
+			defer rawResponse.Body.Close()
+			retry = false
+		}
 	}
-	defer rawResponse.Body.Close()
+
+	//
+	if err, ok := err.(net.Error); ok && err.Timeout() {
+		return res, errors.New("Timeout!")
+	}
 
 	if rawResponse.StatusCode != 200 {
 		return res, errors.New(rawResponse.Status)
