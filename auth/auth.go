@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/lunixbochs/go-keychain"
 	"os"
+	"os/user"
 	"strings"
 )
 
@@ -30,7 +31,7 @@ func (u *User) Blank() bool {
 func SaveAuth(ldapName, ldapPass, username, email, imageUrl string) (err error) {
 	csv := fmt.Sprintf("%s,%s,%s,%s", ldapName, username, email, imageUrl)
 
-	file, err := os.Create(USER_CSV_FILE)
+	file, err := os.Create(getHomeDir() + USER_CSV_FILE)
 	if err != nil {
 		fmt.Printf("%sERROR1 - SaveAuth - %s%s\n", RED, err.Error(), NORMAL)
 		return err
@@ -54,8 +55,7 @@ func SaveAuth(ldapName, ldapPass, username, email, imageUrl string) (err error) 
 }
 
 func ReadAuth() (user User, err error) {
-
-	file, err := os.Open(USER_CSV_FILE)
+	file, err := os.Open(getHomeDir() + USER_CSV_FILE)
 	if err != nil {
 		return user, err
 	}
@@ -88,4 +88,12 @@ func saveToKeychain(ldapName, ldapPass string) error {
 func readKeychain(ldapName string) (key string, err error) {
 	key, err = keychain.Find(SERVICE_KEY, ldapName)
 	return key, err
+}
+
+func getHomeDir() string {
+	usr, err := user.Current()
+	if err != nil {
+		return "/"
+	}
+	return usr.HomeDir + "/"
 }
